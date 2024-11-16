@@ -5,3 +5,7 @@ type Todo struct {
 	Description string `json:"description"`
 	IsDone      bool   `json:"isDone"`
 }
+
+type TodoRequest struct {
+	Description string `json:description`
+}
