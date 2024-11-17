@@ -1,99 +1,108 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import type { Todo } from '../models/todo';
-import { TodoParser } from '../models/todo';
+import { useTodoStore } from '@/stores/todo';
 
-const todos = ref<Todo[]>([]);
-const apiError = ref<string | null>(null);
+const store = useTodoStore();
 const newTodo = ref('');
-
-async function addTodo(desc: string) {
-    try {
-        const response = await fetch(`http://localhost:8080/todos`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                description: desc,
-            }),
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const rawData = await response.json();
-        console.log(rawData);
-        const newTodo = TodoParser.parseTodo(rawData);
-        todos.value.push(newTodo)
-    } catch (error) {
-        apiError.value = (error as Error).message;
-    }
-}
-async function fetchTodos() {
-    try {
-        const response = await fetch('http://localhost:8080/todos');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const rawData = await response.json();
-        console.log(rawData);
-        todos.value = TodoParser.parseTodos(rawData);
-    } catch (error) {
-        apiError.value = (error as Error).message;
-    }
-}
-
-async function changeTodoStatus(todo: Todo, isCheck: boolean) {
-    try {
-        const response = await fetch(`http://localhost:8080/todos/${todo.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                id: todo.id,
-                description: todo.description,
-                isDone: isCheck?!todo.isDone:todo.isDone,
-            }),
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const rawData = await response.json();
-        console.log(rawData);
-        const updatedTodo = TodoParser.parseTodo(rawData);
-        const index = todos.value.findIndex((t) => t.id === updatedTodo.id);
-        todos.value[index] = updatedTodo;
-    } catch (error) {
-        apiError.value = (error as Error).message;
-    }
-}
-
 onMounted(() => {
-    fetchTodos();
+    store.fetchTodos();
 });
 
 </script>
 
 <template>
     <div>
-        <h1>Todo List</h1>
-        <p v-if="apiError" class="error">{{ apiError }}</p>
-        <form @submit.prevent="addTodo(newTodo)">
-    <input v-model="newTodo" required placeholder="new todo">
-    <button>Add Todo</button>
-  </form>        <ul>
-            <li v-for="todo in todos" :key="todo.id">
-                <input type="checkbox" :checked="todo.isDone" @change="() => changeTodoStatus(todo,true)" />
-                {{ todo.description }}
-            </li>
-        </ul>
+        <h1 id="subtitle">Todo List</h1>
+        <p v-if="store.apiError" class="error">{{ store.apiError }}</p>
+        <div v-else="store.apiError">
+
+            <div class="form-container">
+                <form @submit.prevent="store.addTodo(newTodo)" class="todo-new-form">
+                    <input type="text" v-model="newTodo" required placeholder="new todo">
+                    <button>Add Todo</button>
+                </form>
+            </div>
+            <ul>
+                <li v-for="todo in store.todos" :key="todo.id" class="todo-item">
+                    {{ todo.description }}
+
+                    <input type="checkbox" :checked="todo.isDone" @change="() => store.changeTodoStatus(todo, true)"
+                        class="checkbox" />
+                </li>
+            </ul>
+        </div>
     </div>
 </template>
 
-
 <style>
 .done {
-  text-decoration: line-through;
+    text-decoration: line-through;
+}
+
+form {
+    display: flex;
+    gap: 10px;
+}
+
+ul {
+    list-style: none;
+    padding: 10px;
+}
+
+#subtitle {
+    text-align: center;
+    padding: 30px 0 30px 0;
+}
+
+input[type="checkbox"] {
+    cursor: pointer;
+}
+
+input[type="text"] {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    flex-grow: 0.5;
+}
+
+button {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #e0e0e0;
+}
+form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100hv;
+}
+.todo-new-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 60px;
+}
+
+.todo-item {
+    font-size: 20px;
+    font-weight: 700;
+    max-width: 70%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    margin: 0 auto;
+}
+
+.checkbox {
+    margin-left: auto;
 }
 </style>
