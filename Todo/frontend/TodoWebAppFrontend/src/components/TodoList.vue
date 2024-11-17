@@ -1,12 +1,33 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useTodoStore } from '@/stores/todo';
+import type { Todo } from '@/models/todo';
 
 const store = useTodoStore();
 const newTodo = ref('');
-onMounted(() => {
-    store.fetchTodos();
+const editingDescriptions = ref<Record<number, string>>({});
+onMounted(async () => {
+    await store.fetchTodos();
+    store.todos.forEach(todo => {
+        editingDescriptions.value[todo.id] = todo.description
+    });
 });
+
+async function updateTodo(todo: Todo) {
+    console.log(editingDescriptions.value[todo.id])
+    const oldDescrtiption = todo.description;
+    todo.description = editingDescriptions.value[todo.id];
+    if (todo.description !== oldDescrtiption) {
+        await store.changeTodoStatus(todo, false);
+    }
+
+    todo.isEditing = false;
+}
+
+async function deleteTodo(todo: Todo){
+    await store.deleteTodo(todo)
+}
+
 
 </script>
 
@@ -24,10 +45,21 @@ onMounted(() => {
             </div>
             <ul>
                 <li v-for="todo in store.todos" :key="todo.id" class="todo-item">
-                    {{ todo.description }}
+                    <div v-if="todo.isEditing">
+                        <input type="text" v-model="editingDescriptions[todo.id]" />
+                    </div>
+                    <div v-else="todo.isEditing">
+                        {{ todo.description }}
+                    </div>
 
-                    <input type="checkbox" :checked="todo.isDone" @change="() => store.changeTodoStatus(todo, true)"
-                        class="checkbox" />
+                    <div class="input-container">
+
+                        <button v-if="todo.isEditing" @click="updateTodo(todo)">Save</button>
+                        <button @click="todo.isEditing = !todo.isEditing" class="item-btn">Edit</button>
+                        <button @click="deleteTodo(todo)" class="item-btn">Delete</button>
+                        <input type="checkbox" :checked="todo.isDone" @change="() => store.changeTodoStatus(todo, true)"
+                            class="checkbox" />
+                    </div>
                 </li>
             </ul>
         </div>
@@ -74,15 +106,18 @@ button {
     background-color: #f0f0f0;
     cursor: pointer;
 }
+
 button:hover {
     background-color: #e0e0e0;
 }
+
 form-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100hv;
 }
+
 .todo-new-form {
     display: flex;
     justify-content: center;
@@ -102,7 +137,9 @@ form-container {
     margin: 0 auto;
 }
 
-.checkbox {
-    margin-left: auto;
+.input-container {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
 }
 </style>

@@ -11,11 +11,9 @@ var todoIdCounter uint
 var todos []Todo = make([]Todo, 0)
 
 func GetAll() []Todo {
-
 	return append([]Todo{}, todos...)
 }
 func GetTodo(id uint) (Todo, error) {
-
 	todo, err := findTodo(id)
 	return *todo, err
 }

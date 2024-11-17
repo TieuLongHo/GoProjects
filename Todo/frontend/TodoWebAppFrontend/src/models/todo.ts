@@ -2,6 +2,7 @@ export interface Todo {
     id: number;
     description: string;
     isDone: boolean;
+    isEditing: boolean;
 }
 export class TodoParser {
     static parseTodos(rawData: any[]): Todo[] {
@@ -10,6 +11,7 @@ export class TodoParser {
                 id: todo.id,
                 description: todo.description,
                 isDone: todo.isDone,
+                isEditing: false,
             };
         });
     }
@@ -18,6 +20,7 @@ export class TodoParser {
             id: rawData.id,
             description: rawData.description,
             isDone: rawData.isDone,
+            isEditing: false,
         };
 
     }
